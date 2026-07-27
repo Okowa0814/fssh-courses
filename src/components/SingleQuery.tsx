@@ -64,7 +64,7 @@ export function SingleQuery({
     return (
         <>
             <section className="controls">
-                <TeacherCombobox teachers={data.teachers} teacher={teacher} onSelectTeacher={onSelectTeacher} idPrefix="single" label="選擇教師" />
+                <TeacherCombobox teachers={data.teachers} teacher={teacher} onSelectTeacher={onSelectTeacher} idPrefix="single" label="選擇教師 (可輸入關鍵詞搜尋)" />
             </section>
             {grid && (
                 <ScheduleTable

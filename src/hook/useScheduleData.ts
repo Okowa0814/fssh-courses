@@ -20,7 +20,7 @@ function loadScheduleData(): Promise<ScheduleData> {
     if (cached) return Promise.resolve(cached);
 
     if (!inflight) {
-        inflight = fetch(`${import.meta.env.BASE_URL}data/schedule.json`)
+        inflight = fetch(`${import.meta.env.BASE_URL}schedule.json`)
             .then((res) => {
                 if (!res.ok) throw new Error(`無法載入課表資料（HTTP ${res.status}）`);
                 return res.json() as Promise<ScheduleData>;

@@ -5,9 +5,9 @@
     --fg: oklch(18% 0.012 250);
     --muted: oklch(46% 0.012 250);
     --border: oklch(92% 0.005 250);
-    --accent: oklch(58% 0.18 255);
-    --accent-strong: oklch(48% 0.17 255);
-    --accent-soft: oklch(94% 0.03 255);
+    --accent: oklch(75% 0.18 55);
+    --accent-strong: oklch(64% 0.19 41);
+    --accent-soft: oklch(95% 0.04 60);
     --highlight: oklch(83% 0.14 85);
     --highlight-fg: oklch(32% 0.09 75);
     --highlight-border: oklch(65% 0.15 80);
@@ -36,9 +36,9 @@ body {
 .page {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 24px 20px 90px;
+    padding: 24px 20px 32px;
     /* 等同瀏覽器縮放到 75%：字體、間距、表格全部等比例縮小，不用逐一調整每個數值 */
-    zoom: 0.75;
+    zoom: 0.8;
 }
 /* 只有對照模式（畫面上有 .compare-grid 並排兩張課表）才需要比較寬的版面，
    單一課表模式維持原本 1080px，不用另外用 JS 判斷模式、切 class。 */
@@ -61,13 +61,25 @@ body {
 }
 .title-block {
     flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.school-badge {
+    display: block;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
 }
 .title-block h1 {
     font-family: var(--font-display);
     font-size: 42px;
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin: 0 0 4px;
+    line-height: 1.1;
+    margin: 0;
 }
 .title-block p {
     margin: 0;
@@ -169,6 +181,49 @@ body {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
 }
+
+/* ---------- 自訂教師搜尋 combobox ---------- */
+.combobox {
+    position: relative;
+}
+.combobox-control {
+    position: relative;
+}
+.combobox-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+    max-height: 280px;
+    overflow-y: auto;
+}
+.combobox-option {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--fg);
+    cursor: pointer;
+}
+.combobox-option.active {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+.combobox-option[aria-selected='true'] {
+    font-weight: 700;
+}
+.combobox-empty {
+    padding: 10px 14px;
+    font-size: 16px;
+    color: var(--muted);
+}
 .compare-field {
     display: flex;
     gap: 16px;
@@ -223,14 +278,18 @@ table {
 
 thead th {
     background: var(--surface);
-    font-size: 17px;
+    font-size: 20px;
     font-weight: 550;
     color: var(--muted);
     letter-spacing: 0.02em;
     padding: 8px 6px;
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     text-align: center;
     font-variant-numeric: tabular-nums;
+}
+thead th:last-child {
+    border-right: none;
 }
 thead th.corner {
     position: sticky;
@@ -240,15 +299,7 @@ thead th.corner {
 }
 thead th.is-today {
     color: var(--accent-strong);
-}
-thead th.is-today .today-dot {
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--accent-strong);
-    margin-left: 5px;
-    vertical-align: middle;
+    font-weight: 700;
 }
 
 tbody th {
@@ -263,18 +314,28 @@ tbody th {
     padding: 6px 10px;
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
-    text-align: left;
+    text-align: center;
+    vertical-align: middle;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
 td.cell {
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     padding: 0;
     min-width: 124px;
     height: 74px;
     text-align: center;
     vertical-align: middle;
+}
+td.cell:last-child {
+    border-right: none;
+}
+/* 最後一列不畫下邊線，避免跟 .table-card 的圓角外框在角落對不齊 */
+tbody tr:last-child td.cell,
+tbody tr:last-child th {
+    border-bottom: none;
 }
 td.cell.filled {
     cursor: pointer;
@@ -303,14 +364,14 @@ td.cell.match.filled::after {
 }
 td.cell.filled .subject {
     display: block;
-    font-size: 19px;
+    font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.005em;
     color: var(--fg);
 }
 td.cell.filled .who {
     display: block;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 450;
     letter-spacing: 0.015em;
     color: var(--muted);
@@ -341,7 +402,7 @@ td.cell.match:focus-visible {
 td.cell.empty {
     color: var(--muted);
     opacity: 0.55;
-    font-size: 17px;
+    font-size: 16px;
 }
 /* 有課但因教室代碼無法對應班級（非 3 碼數字）而不可跳轉的格子：維持樣式一致，但不裝作可點擊 */
 td.cell.filled:not([role='button']) {
@@ -368,7 +429,7 @@ td.cell.filled:not([role='button'])::after {
 
 .hint {
     margin: 20px 2px 0;
-    font-size: 17px;
+    font-size: 16px;
     color: var(--muted);
 }
 
@@ -400,18 +461,13 @@ td.cell.filled:not([role='button'])::after {
 
 /* ---------- footer ---------- */
 .footer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 0;
-    padding: 14px 20px;
-    background: var(--surface);
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
     text-align: center;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 16px;
     letter-spacing: 0.01em;
-    z-index: 10;
 }
 .footer-link {
     color: var(--muted);
@@ -424,4 +480,19 @@ td.cell.filled:not([role='button'])::after {
 .footer-link:focus-visible {
     color: var(--accent-strong);
     border-bottom-color: var(--accent-strong);
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+    .page {
+        zoom: 0.5;
+    }
+    .topbar {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .mode-switch {
+        margin-left: 0;
+    }
 }

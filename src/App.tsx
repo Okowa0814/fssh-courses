@@ -38,14 +38,13 @@ function ScheduleApp({ data }: { data: ScheduleData }) {
     const [compareTeacher, setCompareTeacher] = useState<string | null>(null);
 
     return (
-        <>
         <div className="page">
 
             <header className="topbar">
                 
                 <div className="title-block">
-                    <h1>課表查詢</h1>
-                    <p>查詢班級或教師的每週課表，並可對照兩者的對應節次。</p>
+                    <img className="school-badge" src={`${import.meta.env.BASE_URL}fssh-badge.png`} alt="鳳山高中校徽" />
+                    <h1>鳳山高中課表查詢</h1>
                 </div>
 
                 <ModeSwitch mode={mode} onChange={setMode} />
@@ -79,14 +78,13 @@ function ScheduleApp({ data }: { data: ScheduleData }) {
                     />
                 )}
             </main>
-        </div>
 
-        <footer className="footer">
-            © 2026 鳳山高中 課表查詢 | Developed by{' '}
-            <a className="footer-link" href="https://github.com/Okowa0814" target="_blank" rel="noopener noreferrer">
-                Okowa
-            </a>
-        </footer>
-        </>
+            <footer className="footer">
+                © 2026 鳳山高中 課表查詢 | Developed by{' '}
+                <a className="footer-link" href="https://github.com/Okowa0814" target="_blank" rel="noopener noreferrer">
+                    Okowa
+                </a>
+            </footer>
+        </div>
     );
 }

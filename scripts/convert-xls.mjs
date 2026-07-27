@@ -1,11 +1,11 @@
-// 把 example/example.xls（教師課表匯出檔）轉成 public/data/schedule.json。
+// 把 data/ 目錄底下唯一的檔案（教師課表匯出檔，檔名不限）轉成 public/schedule.json。
 // 執行方式：npm run data（或 npm run release 會自動先跑這個再 build）。
 //
 // 資料格式假設（已用實際檔案驗證過）：
 // - 每位教師的區塊固定 48 列，區塊起點是第 0 欄等於「教師:」的那一列。
 // - 教師姓名在 (teacherRow, col 2)。
-// - 星期一～六對應欄位 4/6/8/10/12/14。
-// - 早自習 + 第一節～第八節共 9 個節次（第九節在來源檔案裡一律是空的，依需求不輸出），從 teacherRow-2+6 開始，每節間隔 4 列；
+// - 星期一～五對應欄位 4/6/8/10/12（週六在來源檔案裡一律是空的，依需求不輸出）。
+// - 第一節～第八節共 8 個節次（早自習、第九節在來源檔案裡一律是空的，依需求不輸出），從 teacherRow-2+10 開始，每節間隔 4 列；
 //   節次的第一列是科目、下一列是教室。
 //
 // 未來若學校匯出更多教師，只要維持同樣格式，這裡的區塊掃描與驗證邏輯會自動套用，
@@ -29,27 +29,43 @@ XLSX.set_cptable(cptable);
 XLSX.set_fs(fs);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE_XLS = path.resolve(__dirname, '../../example/example.xls');
-const OUTPUT_JSON = path.resolve(__dirname, '../public/data/schedule.json');
+const DATA_DIR = path.resolve(__dirname, '../data');
+const OUTPUT_JSON = path.resolve(__dirname, '../public/schedule.json');
+
+function resolveSourceXls() {
+    if (!fs.existsSync(DATA_DIR)) {
+        throw new Error(`找不到資料目錄：${DATA_DIR}`);
+    }
+    const entries = fs.readdirSync(DATA_DIR).filter((name) => !name.startsWith('.'));
+    if (entries.length === 0) {
+        throw new Error(`${DATA_DIR} 是空的，請把課表匯出檔（.xls）放進去`);
+    }
+    if (entries.length > 1) {
+        throw new Error(`${DATA_DIR} 裡應該只放一個檔案，目前偵測到 ${entries.length} 個：${entries.join('、')}`);
+    }
+    return path.join(DATA_DIR, entries[0]);
+}
+
+const SOURCE_XLS = resolveSourceXls();
 
 // 週六欄位在來源檔案中一律是空的（學校沒有排週六的課），依需求不輸出這一欄。
 const DAYS = ['一', '二', '三', '四', '五'];
 const DAY_COLUMNS = [4, 6, 8, 10, 12];
 
 const PERIODS = [
-    { index: 0, label: '早自習', start: '07:25', end: '07:55' },
-    { index: 1, label: '第一節', start: '08:00', end: '08:50' },
-    { index: 2, label: '第二節', start: '09:00', end: '09:50' },
-    { index: 3, label: '第三節', start: '10:10', end: '11:00' },
-    { index: 4, label: '第四節', start: '11:10', end: '12:00' },
-    { index: 5, label: '第五節', start: '13:15', end: '14:05' },
-    { index: 6, label: '第六節', start: '14:15', end: '15:05' },
-    { index: 7, label: '第七節', start: '15:15', end: '16:05' },
-    { index: 8, label: '第八節', start: '16:10', end: '17:00' }
+    { index: 0, label: '第一節', start: '08:00', end: '08:50' },
+    { index: 1, label: '第二節', start: '09:00', end: '09:50' },
+    { index: 2, label: '第三節', start: '10:10', end: '11:00' },
+    { index: 3, label: '第四節', start: '11:10', end: '12:00' },
+    { index: 4, label: '第五節', start: '13:15', end: '14:05' },
+    { index: 5, label: '第六節', start: '14:15', end: '15:05' },
+    { index: 6, label: '第七節', start: '15:15', end: '16:05' },
+    { index: 7, label: '第八節', start: '16:10', end: '17:00' }
 ];
 
 const BLOCK_HEIGHT = 48;
-const FIRST_PERIOD_OFFSET = 6; // 相對於 block 起點（teacherRow - 2）
+// 早自習那一節在來源檔案裡一律是空的，依需求不輸出；第一節的科目列在 block 起點 +10（跳過早自習的 3 列 + 1 列間隔）。
+const FIRST_PERIOD_OFFSET = 10; // 相對於 block 起點（teacherRow - 2）
 const PERIOD_ROW_STEP = 4;
 
 function cellText(value) {
@@ -59,10 +75,6 @@ function cellText(value) {
 }
 
 function main() {
-    if (!fs.existsSync(SOURCE_XLS)) {
-        throw new Error(`找不到來源檔案：${SOURCE_XLS}`);
-    }
-
     const workbook = XLSX.readFile(SOURCE_XLS, { codepage: 950 });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];

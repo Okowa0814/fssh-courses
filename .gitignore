@@ -1,6 +1,7 @@
 node_modules
 dist
-public
+public/schedule.json
+data/example.xls
 
 tsconfig.node.tsbuildinfo
 tsconfig.tsbuildinfo

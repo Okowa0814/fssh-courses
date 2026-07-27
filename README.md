@@ -1,0 +1,124 @@
+# 📅 課表查詢系統
+
+鳳山高中課表查詢工具。純前端 React 應用，資料來自教務處匯出的 `.xls` 課表，轉換成 JSON 後直接由靜態網站讀取，不需要任何後端或資料庫。
+
+## ✨ 功能特色
+
+- **三種查詢模式**
+  - 🏫 **班級模式**：先選年級、再選班級，看該班一週課表
+  - 👩‍🏫 **教師模式**：輸入教師姓名（支援模糊搜尋 `datalist`），看該教師一週課表
+  - 🔍 **對照模式**：班級與教師課表並排顯示，重疊的節次自動用黃色標示
+- 點擊課表中的任一節課，可直接跳轉查看對應教師／班級的課表
+- 年級／班級選單完全依實際資料動態產生，不寫死班級數量——之後資料多了幾個年級、幾個班，畫面會自動跟著長出來
+- 今天對應的星期會有藍色標記
+- 響應式版面，桌機、平板、手機都能正常瀏覽
+
+## 🛠️ 技術棧
+
+| 用途 | 技術 |
+|---|---|
+| 前端框架 | [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
+| 建置工具 | [Vite](https://vitejs.dev/) |
+| xls → JSON 轉換 | Node.js + [SheetJS (xlsx)](https://sheetjs.com/) |
+| 樣式 | 純 CSS（無框架），OKLCH 色彩、`clamp()` 流體字級、`zoom` 等比例縮放 |
+| 資料儲存 | 純靜態 JSON 檔（`public/schedule.json`），無後端、無資料庫 |
+
+## 📁 專案結構
+
+```
+fssh-courses/
+├── data/
+│   └── (課表匯出檔，檔名不限，裡面只能放一個檔案)
+├── scripts/
+│   └── convert-xls.mjs     # xls → JSON 轉換腳本
+├── public/
+│   ├── fssh-badge.png       # 校徽等靜態資源，正常進版控
+│   └── schedule.json        # 轉換產出的課表資料（不進版控，需自行產生）
+├── src/
+│   ├── components/         # React 元件（ScheduleTable、SingleQuery、CompareView…）
+│   ├── hook/
+│   │   └── useScheduleData.ts  # 讀取課表資料的自訂 hook
+│   ├── lib/                # 純函式（教室代碼解析、grid 建構、今日判斷…）
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── style.css           # 全站樣式與設計 tokens
+│   └── types.ts
+└── package.json
+```
+
+## 🚀 開始使用
+
+### 環境需求
+
+- Node.js 18 以上（開發時使用 v22）
+- npm
+
+### 安裝套件
+
+```bash
+npm install
+```
+
+### 產生課表資料
+
+把教務處匯出的課表檔（`.xls`，檔名不限）放進 `data/` 目錄——**`data/` 裡只能放一個檔案**，轉換腳本會自動抓裡面唯一的那個檔案，放超過一個會直接報錯中止。放好之後執行：
+
+```bash
+npm run data
+```
+
+會轉出 `public/schedule.json`。
+
+> ⚠️ `data/`、`public/schedule.json` 都沒有進版控（含真實姓名等資料），每次 clone 專案都要自行把來源檔放進 `data/` 再重新跑這個指令。
+
+### 開發模式（有 HMR 熱更新）
+
+```bash
+npm run dev -- --host
+```
+
+啟動後打開終端機顯示的網址（預設 `http://localhost:5173`）。加 `--host` 是為了讓區網／WSL 環境下其他裝置或 Windows 端瀏覽器也能連進來。
+
+### Build 正式版
+
+```bash
+npm run build
+```
+
+輸出到 `dist/`，是可以直接丟給任何靜態網站伺服器（例如 IIS）的純靜態檔案。
+
+### 一次搞定：轉換資料 + build
+
+```bash
+npm run release
+```
+
+等同 `npm run data && npm run build`，之後 `data/` 裡的來源檔有更新，跑這行就對了。
+
+### 本機預覽正式版
+
+```bash
+npm run preview -- --host --port 4321
+```
+
+跑的是 `dist/` 裡的內容，跟之後實際部署上去的版本完全一樣。
+
+## 📦 部署
+
+這個專案 build 出來就是純靜態檔案（HTML/CSS/JS + JSON），沒有任何 server-side 邏輯，可以直接放到：
+
+- IIS（Windows Server）
+- Nginx / Apache
+- 任何靜態網站託管服務
+
+只要把 `dist/` 的內容整個複製到網站根目錄即可，不需要安裝 Node.js 或任何執行環境。
+
+## 🔄 資料更新流程
+
+1. 拿到新版課表匯出檔，覆蓋掉 `data/` 裡原本的檔案（確保裡面永遠只有一個檔案）
+2. `npm run release`
+3. 把新的 `dist/` 內容覆蓋到伺服器上
+
+---
+
+Developed by [Okowa](https://github.com/Okowa0814) 🚀

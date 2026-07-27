@@ -37,7 +37,6 @@ export function ScheduleTable<T extends { subject: string }>({
                                 i === todayIndex ? (
                                     <th key={d} scope="col" className="is-today" aria-label={`週${d}，今天`}>
                                         週{d}
-                                        <span className="today-dot" aria-hidden="true" />
                                     </th>
                                 ) : (
                                     <th key={d} scope="col">
