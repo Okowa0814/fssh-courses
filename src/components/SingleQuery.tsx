@@ -1,8 +1,11 @@
 import { useMemo } from 'react';
+
 import type { ScheduleData } from '../types';
+
 import { parseClassCode, groupClassesByGrade } from '../lib/classCode';
 import { buildRoomGrid, buildTeacherGrid } from '../lib/buildGrid';
 import { todayDayIndex } from '../lib/today';
+
 import { ScheduleTable } from './ScheduleTable';
 import { GradeClassSelect } from './GradeClassSelect';
 import { TeacherCombobox } from './TeacherCombobox';
@@ -36,7 +39,7 @@ export function SingleQuery({
     const todayIndex = todayDayIndex(data.days);
 
     if (mode === 'class') {
-        const room = selectedRoom && parseClassCode(selectedRoom) ? selectedRoom : gradeGroups[0]?.classes[0]?.room ?? null;
+        const room = (selectedRoom && parseClassCode(selectedRoom)) ? selectedRoom : null;        
         const label = room ? parseClassCode(room)?.label ?? room : '';
         const grid = room ? buildRoomGrid(data.sessions, room, data.days.length, data.periods.length) : null;
 
@@ -61,7 +64,7 @@ export function SingleQuery({
         );
     }
 
-    const teacher = selectedTeacher ?? data.teachers[0] ?? null;
+    const teacher = selectedTeacher;
     const grid = teacher ? buildTeacherGrid(data.sessions, teacher, data.days.length, data.periods.length) : null;
 
     return (

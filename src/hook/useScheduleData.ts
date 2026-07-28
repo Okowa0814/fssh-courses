@@ -16,7 +16,7 @@ type State =
 let cached: ScheduleData | null = null;
 let inflight: Promise<ScheduleData> | null = null;
 
-function loadScheduleData(): Promise<ScheduleData> {
+function getScheduleData(): Promise<ScheduleData> {
     if (cached) return Promise.resolve(cached);
 
     if (!inflight) {
@@ -44,7 +44,7 @@ export function useScheduleData(): State {
 
         let cancelled = false;
 
-        loadScheduleData()
+        getScheduleData()
             .then((data) => {
                 if (!cancelled) setState({ status: 'ready', data });
             })
