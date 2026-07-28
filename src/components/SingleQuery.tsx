@@ -10,10 +10,13 @@ import { TeacherCombobox } from './TeacherCombobox';
 interface SingleQueryProps {
     mode: 'class' | 'teacher';
     data: ScheduleData;
+    
     selectedRoom: string | null;
     selectedTeacher: string | null;
+
     onSelectRoom: (room: string) => void;
     onSelectTeacher: (teacher: string) => void;
+
     onJumpToTeacher: (teacher: string) => void;
     onJumpToRoom: (room: string) => void;
 }

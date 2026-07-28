@@ -9,8 +9,10 @@ import { TeacherCombobox } from './TeacherCombobox';
 
 interface CompareViewProps {
     data: ScheduleData;
+
     room: string | null;
     teacher: string | null;
+
     onSelectRoom: (room: string) => void;
     onSelectTeacher: (teacher: string) => void;
 }

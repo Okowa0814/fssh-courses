@@ -19,7 +19,7 @@
 |---|---|
 | 前端框架 | [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
 | 建置工具 | [Vite](https://vitejs.dev/) |
-| xls → JSON 轉換 | Node.js + [SheetJS (xlsx)](https://sheetjs.com/) |
+| xls → JSON 轉換 | Python + [xlrd](https://pypi.org/project/xlrd/)，打包成 Windows `.exe`（[PyInstaller](https://pyinstaller.org/)） |
 | 樣式 | 純 CSS（無框架），OKLCH 色彩、`clamp()` 流體字級、`zoom` 等比例縮放 |
 | 資料儲存 | 純靜態 JSON 檔（`public/schedule.json`），無後端、無資料庫 |
 
@@ -30,7 +30,8 @@ fssh-courses/
 ├── data/
 │   └── (課表匯出檔，檔名不限，裡面只能放一個檔案)
 ├── scripts/
-│   └── convert-xls.mjs     # xls → JSON 轉換腳本
+│   ├── convert_xls.py      # xls → JSON 轉換腳本；開發時直接跑，或打包成 .exe 給非工程師用
+│   └── requirements.txt    # convert_xls.py 執行/打包需要的套件
 ├── public/
 │   ├── fssh-badge.png       # 校徽等靜態資源，正常進版控
 │   └── schedule.json        # 轉換產出的課表資料（不進版控，需自行產生）
@@ -50,13 +51,14 @@ fssh-courses/
 
 ### 環境需求
 
-- Node.js 18 以上（開發時使用 v22）
-- npm
+- Node.js 18 以上（開發時使用 v22）＋ npm，用來跑網站本身（`dev` / `build`）
+- Python 3.9 以上，用來跑 `scripts/convert_xls.py` 轉換課表資料
 
 ### 安裝套件
 
 ```bash
 npm install
+pip install -r scripts/requirements.txt
 ```
 
 ### 產生課表資料
@@ -64,12 +66,28 @@ npm install
 把教務處匯出的課表檔（`.xls`，檔名不限）放進 `data/` 目錄——**`data/` 裡只能放一個檔案**，轉換腳本會自動抓裡面唯一的那個檔案，放超過一個會直接報錯中止。放好之後執行：
 
 ```bash
-npm run data
+python scripts/convert_xls.py
 ```
 
 會轉出 `public/schedule.json`。
 
 > ⚠️ `data/`、`public/schedule.json` 都沒有進版控（含真實姓名等資料），每次 clone 專案都要自行把來源檔放進 `data/` 再重新跑這個指令。
+
+### 給非工程師用的轉換工具（.exe）
+
+如果要讓沒裝 Python 的人（例如教務處人員）自己把 `.xls` 轉成 `schedule.json`，可以把 `scripts/convert_xls.py` 打包成一個 Windows `.exe`，之後只要把 `.xls` 檔案拖曳到這個 `.exe` 圖示上，就會在同一個資料夾產生 `schedule.json`（跟開發模式共用同一份程式，行為差異只在於：有拖曳檔案就轉那個檔案、輸出固定放在 `.exe` 旁邊）。
+
+**打包步驟（PyInstaller 沒辦法跨平台編譯，一定要用 Windows 版 Python 打包才會得到 Windows `.exe`）：**
+
+```powershell
+cd scripts
+pip install -r requirements.txt
+pyinstaller --onefile convert_xls.py
+```
+
+> 在 WSL 裡也能做到：只要 Windows 端本身有裝 Python，就可以在 WSL 終端機直接呼叫 Windows 那份 `python.exe`（例如 `/mnt/c/Users/<你的帳號>/AppData/Local/Programs/Python/Python312/python.exe`）建 venv、裝套件、跑 `pyinstaller`，一樣會產生真正的 Windows exe，不用切去另一個視窗操作。
+
+打包完成後，`.exe` 會在 `scripts/dist/convert_xls.exe`，把這一個檔案發給需要轉檔的人即可，不需要對方裝 Python 或 Node.js。
 
 ### 開發模式（有 HMR 熱更新）
 
@@ -86,14 +104,6 @@ npm run build
 ```
 
 輸出到 `dist/`，是可以直接丟給任何靜態網站伺服器（例如 IIS）的純靜態檔案。
-
-### 一次搞定：轉換資料 + build
-
-```bash
-npm run release
-```
-
-等同 `npm run data && npm run build`，之後 `data/` 裡的來源檔有更新，跑這行就對了。
 
 ### 本機預覽正式版
 
@@ -115,9 +125,13 @@ npm run preview -- --host --port 4321
 
 ## 🔄 資料更新流程
 
-1. 拿到新版課表匯出檔，覆蓋掉 `data/` 裡原本的檔案（確保裡面永遠只有一個檔案）
-2. `npm run release`
-3. 把新的 `dist/` 內容覆蓋到伺服器上
+`schedule.json` 是網頁在**執行時**用 `fetch` 讀取的（不是 build 時內嵌進 JS），所以只換資料的話**不需要重新 build、也不需要動 `dist/` 裡其他檔案**，直接覆蓋伺服器上的 `schedule.json` 就會生效。
+
+- **只換資料**：用 [`convert_xls.exe`](#給非工程師用的轉換工具exe)（或直接跑 `python scripts/convert_xls.py`）把新的 `.xls` 轉成 `schedule.json`，直接覆蓋到伺服器網站根目錄下的 `schedule.json`（例如 IIS 站台資料夾）即可，不需要重新整包部署
+- **改了程式碼／UI**：才需要照原本的流程重新 build 整包部署：
+  1. 拿到新版課表匯出檔，覆蓋掉 `data/` 裡原本的檔案（確保裡面永遠只有一個檔案）
+  2. `python scripts/convert_xls.py && npm run build`
+  3. 把新的 `dist/` 內容整個覆蓋到伺服器上
 
 ---
 

@@ -1,7 +1,13 @@
 node_modules
 dist
 public/schedule.json
-data/example.xls
+data
 
 tsconfig.node.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# scripts/convert_xls.py 打包相關的產物與工具鏈，不進版控
+scripts/build
+scripts/venv_win
+scripts/*.spec
+__pycache__

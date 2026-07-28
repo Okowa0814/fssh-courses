@@ -1,0 +1,8 @@
+{
+    "files.exclude": {
+        "**/node_modules": true,
+        "tsconfig.json": true,
+        "tsconfig.node.json": true,
+        "vite.config.d.ts": true,
+    }
+}

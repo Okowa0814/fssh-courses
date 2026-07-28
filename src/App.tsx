@@ -40,7 +40,8 @@ function ScheduleApp({ data }: { data: ScheduleData }) {
     return (
         <div className="page">
 
-            <header className="topbar">
+            {/* Header */}
+            <header className="header">
                 
                 <div className="title-block">
                     <img className="school-badge" src={`${import.meta.env.BASE_URL}fssh-badge.png`} alt="鳳山高中校徽" />
@@ -50,6 +51,7 @@ function ScheduleApp({ data }: { data: ScheduleData }) {
                 <ModeSwitch mode={mode} onChange={setMode} />
             </header>
 
+            {/* Main Content */}
             <main>
                 {mode === 'compare' ? (
                     <CompareView
@@ -79,6 +81,7 @@ function ScheduleApp({ data }: { data: ScheduleData }) {
                 )}
             </main>
 
+            {/* Footer */}
             <footer className="footer">
                 © 2026 鳳山高中 課表查詢 | Developed by{' '}
                 <a className="footer-link" href="https://github.com/Okowa0814" target="_blank" rel="noopener noreferrer">
