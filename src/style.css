@@ -4,7 +4,6 @@
     --surface: oklch(100% 0 0);
     --fg: oklch(18% 0.012 250);
     --muted: oklch(46% 0.012 250);
-    --border: oklch(92% 0.005 250);
     --accent: oklch(75% 0.18 55);
     --accent-strong: oklch(64% 0.19 41);
     --accent-soft: oklch(95% 0.04 60);
@@ -277,8 +276,8 @@ table {
 }
 
 thead th {
-    background: var(--surface);
-    font-size: 20px;
+    background: #d2f5f3;
+    font-size: 24px;
     font-weight: 550;
     color: var(--muted);
     letter-spacing: 0.02em;
@@ -305,9 +304,9 @@ thead th.is-today {
 tbody th {
     position: sticky;
     left: 0;
-    background: var(--surface);
+    background: #e5fae0;
     z-index: 1;
-    font-size: 16px;
+    font-size: 24px;
     font-weight: 550;
     color: var(--muted);
     letter-spacing: 0.01em;
