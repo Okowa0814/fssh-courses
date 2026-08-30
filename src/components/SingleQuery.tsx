@@ -55,8 +55,11 @@ export function SingleQuery({
                         periods={data.periods}
                         days={data.days}
                         todayIndex={todayIndex}
-                        whoOf={(cell) => cell.teacher}
-                        onCellActivate={(cell) => onJumpToTeacher(cell.teacher)}
+                        whoOf={(cell) => cell.teacher ?? ''}
+                        onCellActivate={(cell) => {
+                            if (cell.teacher) onJumpToTeacher(cell.teacher);
+                        }}
+                        canActivate={(cell) => cell.teacher !== null}
                     />
                 )}
                 <p className="hint">點擊課表中的課程，可跳轉查看該教師的課表。</p>

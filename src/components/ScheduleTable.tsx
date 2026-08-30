@@ -76,7 +76,7 @@ export function ScheduleTable<T extends { subject: string }>({
                                             className={className}
                                             role={interactive ? 'button' : undefined}
                                             tabIndex={interactive ? 0 : undefined}
-                                            aria-label={`週${d} 第${p + 1}節，${cell.subject}，${who}`}
+                                            aria-label={`週${d} 第${p + 1}節，${cell.subject}${who ? `，${who}` : ''}`}
                                             onClick={interactive ? activate : undefined}
                                             onKeyDown={
                                                 interactive
@@ -90,7 +90,7 @@ export function ScheduleTable<T extends { subject: string }>({
                                             }
                                         >
                                             <span className="subject">{cell.subject}</span>
-                                            <span className="who">{who}</span>
+                                            {who && <span className="who">{who}</span>}
                                         </td>
                                     );
                                 })}

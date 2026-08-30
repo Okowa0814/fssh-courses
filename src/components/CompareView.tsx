@@ -29,7 +29,6 @@ export function CompareView({ data, room, teacher, onSelectRoom, onSelectTeacher
     const roomLabel = parseClassCode(currentRoom)?.label ?? currentRoom;
     const roomGrid = buildRoomGrid(data.sessions, currentRoom, data.days.length, data.periods.length);
     const teacherGrid = buildTeacherGrid(data.sessions, currentTeacher, data.days.length, data.periods.length);
-    const overlapCount = data.sessions.filter((s) => s.room === currentRoom && s.teacher === currentTeacher).length;
 
     return (
         <>
@@ -38,18 +37,6 @@ export function CompareView({ data, room, teacher, onSelectRoom, onSelectTeacher
                 <TeacherCombobox teachers={data.teachers} teacher={currentTeacher} onSelectTeacher={onSelectTeacher} idPrefix="compare" />
             </section>
 
-            <p className={`compare-summary${overlapCount === 0 ? ' is-zero' : ''}`} aria-live="polite">
-                {overlapCount > 0 ? (
-                    <>
-                        {roomLabel} 與 {currentTeacher}，本週共有 <span className="count">{overlapCount}</span> 節相互對應。
-                    </>
-                ) : (
-                    <>
-                        {roomLabel} 與 {currentTeacher}，本週沒有相互對應的課節。
-                    </>
-                )}
-            </p>
-
             <div className="compare-grid">
                 <ScheduleTable
                     title={`${roomLabel} 課表`}
@@ -57,8 +44,11 @@ export function CompareView({ data, room, teacher, onSelectRoom, onSelectTeacher
                     periods={data.periods}
                     days={data.days}
                     todayIndex={todayIndex}
-                    whoOf={(cell) => cell.teacher}
-                    onCellActivate={(cell) => onSelectTeacher(cell.teacher)}
+                    whoOf={(cell) => cell.teacher ?? ''}
+                    onCellActivate={(cell) => {
+                        if (cell.teacher) onSelectTeacher(cell.teacher);
+                    }}
+                    canActivate={(cell) => cell.teacher !== null}
                     isMatch={(_d, _p, cell) => cell.teacher === currentTeacher}
                 />
                 <ScheduleTable

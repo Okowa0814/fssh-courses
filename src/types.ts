@@ -36,5 +36,6 @@ export interface GridCellTeacherView {
 
 export interface GridCellClassView {
     subject: string;
-    teacher: string;
+    /** 同一教室同一時段被多位教師共用（跑班/協同課程）時，無法對應單一教師，值為 null。 */
+    teacher: string | null;
 }

@@ -14,11 +14,33 @@
 # 未來若學校匯出更多教師，只要維持同樣格式，這裡的區塊掃描與驗證邏輯會自動套用，
 # 不需要修改程式。若格式跑掉（區塊高度不是 48），程式會直接印出錯誤並中止，避免產生錯誤資料。
 
+import codecs
 import json
 import sys
 from pathlib import Path
 
 import xlrd
+
+# 部分學校匯出的 xls 裡，跟課表資料無關的欄位（如教師區塊的備註文字）偶爾會混入
+# 不合法的 cp950 位元組（例如殘缺的多位元組字元）。xlrd 開檔時會一次性用嚴格模式
+# 解碼整份檔案的所有字串，只要有任何一格解碼失敗就會直接中止，連帶讓後面完全用
+# 不到那些欄位的有效資料（教師姓名、科目、教室）也讀不到。
+# 這裡註冊一個容錯版的 cp950，解不開的位元組用替代字元頂替、繼續解碼，而不是中止。
+CP950_LENIENT = 'cp950_lenient'
+
+
+def _lookup_cp950_lenient(name):
+    if name != CP950_LENIENT:
+        return None
+    base = codecs.lookup('cp950')
+    return codecs.CodecInfo(
+        name=CP950_LENIENT,
+        encode=base.encode,
+        decode=lambda data, errors='replace': base.decode(data, 'replace'),
+    )
+
+
+codecs.register(_lookup_cp950_lenient)
 
 if sys.platform == 'win32':
     # Windows 主控台預設用系統 codepage（如 cp950），跟 Python 輸出的 UTF-8 對不上，
@@ -27,6 +49,12 @@ if sys.platform == 'win32':
 
     ctypes.windll.kernel32.SetConsoleOutputCP(65001)
     sys.stdout.reconfigure(encoding='utf-8')
+
+DEPLOY_HOST = ''
+DEPLOY_PORT = 22
+DEPLOY_USERNAME = ''
+DEPLOY_PASSWORD = ''
+DEPLOY_REMOTE_PATH = ''
 
 DAYS = ['一', '二', '三', '四', '五']
 DAY_COLUMNS = [4, 6, 8, 10, 12]
@@ -76,6 +104,30 @@ def output_path():
     return project_root() / 'public' / 'schedule.json'
 
 
+def upload_schedule(output_json: Path) -> None:
+    # 延遲載入，讓沒有填 DEPLOY_* 設定的人（例如純本機開發）不需要裝 paramiko。
+    import paramiko
+
+    client = paramiko.SSHClient()
+    # 伺服器的 host key 沒有事先釘選，第一次連線會自動信任並記住（AutoAddPolicy）。
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(
+        hostname=DEPLOY_HOST,
+        port=DEPLOY_PORT,
+        username=DEPLOY_USERNAME,
+        password=DEPLOY_PASSWORD,
+        timeout=15,
+    )
+    try:
+        sftp = client.open_sftp()
+        try:
+            sftp.put(str(output_json), DEPLOY_REMOTE_PATH)
+        finally:
+            sftp.close()
+    finally:
+        client.close()
+
+
 def resolve_source_from_data_dir():
     data_dir = project_root() / 'data'
     if not data_dir.exists():
@@ -90,8 +142,9 @@ def resolve_source_from_data_dir():
 
 
 def convert(source_path: Path) -> dict:
-    # 這份 xls 沒有 CODEPAGE 記錄、文字是 Big5，不指定 encoding_override 的話中文會變成亂碼。
-    workbook = xlrd.open_workbook(str(source_path), encoding_override='cp950')
+    # 這份 xls 沒有 CODEPAGE 記錄、文字是 Big5，不指定 encoding_override 的話中文會變成亂碼；
+    # 用容錯版的 cp950，避免無關欄位裡的髒位元組拖累整份有效資料的讀取。
+    workbook = xlrd.open_workbook(str(source_path), encoding_override=CP950_LENIENT)
     sheet = workbook.sheet_by_index(0)
 
     teacher_row_indexes = [
@@ -146,20 +199,6 @@ def convert(source_path: Path) -> dict:
                     'subject': subject,
                 })
 
-    # 同一教室同一天同一節不應被兩位教師同時占用，這是「教室代稱班級」設計的前提假設。
-    seen_slots = {}
-    for session in sessions:
-        if not session['room']:
-            continue
-        key = (session['room'], session['day'], session['period'])
-        existing = seen_slots.get(key)
-        if existing and existing['teacher'] != session['teacher']:
-            raise ValueError(
-                f"教室 {session['room']} 週{DAYS[session['day']]} 第{session['period'] + 1}節同時被 "
-                f"{existing['teacher']} 與 {session['teacher']} 占用，違反教室代稱班級的假設"
-            )
-        seen_slots[key] = session
-
     rooms = sorted(r for r in room_set if r)
 
     return {
@@ -193,6 +232,14 @@ def main():
         )
         print(f"轉換完成：{len(data['teachers'])} 位教師、{len(data['rooms'])} 間教室、{len(data['sessions'])} 筆課節")
         print(f'輸出：{output_json}')
+
+        if DEPLOY_HOST and DEPLOY_USERNAME and DEPLOY_REMOTE_PATH:
+            try:
+                upload_schedule(output_json)
+                print(f'已上傳到 {DEPLOY_HOST}:{DEPLOY_REMOTE_PATH}')
+            except Exception as upload_exc:  # noqa: BLE001 - 上傳失敗不代表轉換失敗，本機檔案還在
+                print(f'上傳失敗（本機的 {output_json} 已經產生，可自行手動複製上去）：{upload_exc}')
+
         if is_frozen():
             input('按 Enter 關閉…')
     except Exception as exc:  # noqa: BLE001 - 給非工程師使用者看的錯誤訊息，故意攔截所有例外

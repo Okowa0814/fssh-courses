@@ -6,6 +6,9 @@
         "tsconfig.node.tsbuildinfo": true,
         "tsconfig.tsbuildinfo": true,
         "vite.config.d.ts": true,
+        "vite.config.ts": true,     
         "**/vite-env.d.ts": true,
+        "package.json": true,
+        "package-lock.json": true
     }
 }
