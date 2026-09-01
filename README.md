@@ -92,10 +92,10 @@ pyinstaller --onefile convert_xls.py
 ### 開發模式（有 HMR 熱更新）
 
 ```bash
-npm run dev -- --host
+npm run dev
 ```
 
-啟動後打開終端機顯示的網址（預設 `http://localhost:5173`）。加 `--host` 是為了讓區網／WSL 環境下其他裝置或 Windows 端瀏覽器也能連進來。
+啟動後打開終端機顯示的網址（預設 `http://localhost:5173`）。`vite.config.ts` 已設定 `server.host: true`，區網／WSL 環境下其他裝置或 Windows 端瀏覽器也能直接連進來，不需另外加 `--host`。
 
 ### Build 正式版
 
@@ -108,7 +108,7 @@ npm run build
 ### 本機預覽正式版
 
 ```bash
-npm run preview -- --host --port 4321
+npm run preview -- --port 4321
 ```
 
 跑的是 `dist/` 裡的內容，跟之後實際部署上去的版本完全一樣。

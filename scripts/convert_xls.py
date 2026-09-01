@@ -32,7 +32,9 @@ CP950_LENIENT = 'cp950_lenient'
 def _lookup_cp950_lenient(name):
     if name != CP950_LENIENT:
         return None
+    
     base = codecs.lookup('cp950')
+
     return codecs.CodecInfo(
         name=CP950_LENIENT,
         encode=base.encode,
@@ -53,7 +55,6 @@ if sys.platform == 'win32':
 DEPLOY_HOST = ''
 DEPLOY_PORT = 22
 DEPLOY_USERNAME = ''
-DEPLOY_PASSWORD = ''
 DEPLOY_REMOTE_PATH = ''
 
 DAYS = ['一', '二', '三', '四', '五']
@@ -108,6 +109,10 @@ def upload_schedule(output_json: Path) -> None:
     # 延遲載入，讓沒有填 DEPLOY_* 設定的人（例如純本機開發）不需要裝 paramiko。
     import paramiko
 
+    # 密碼不寫死在原始碼／打包出來的 exe 裡，避免拿到 exe 的人直接用 strings 之類的工具撈出正式站帳密；
+    # 改成每次執行時當場輸入，只會短暫留在記憶體中。
+    password = input(f'{DEPLOY_USERNAME}@{DEPLOY_HOST} 的密碼：')
+
     client = paramiko.SSHClient()
     # 伺服器的 host key 沒有事先釘選，第一次連線會自動信任並記住（AutoAddPolicy）。
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -115,7 +120,7 @@ def upload_schedule(output_json: Path) -> None:
         hostname=DEPLOY_HOST,
         port=DEPLOY_PORT,
         username=DEPLOY_USERNAME,
-        password=DEPLOY_PASSWORD,
+        password=password,
         timeout=15,
     )
     try:
